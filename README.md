@@ -1,136 +1,125 @@
-# Secure AES-256 Cryptography System (Symmetric Cipher Architecture)
+# Cross-Platform Native Packet Sniffer & Network Analyzer
 
 ## 📌 Project Overview
-This repository hosts a production-grade, cryptographically secure symmetric data encryption tool developed natively in Python. The system provides mathematically hardened implementations of the Advanced Encryption Standard (**AES-256**) operating in Cipher Block Chaining (**CBC**) mode. To defend against structural bit-flipping and text leaks common in basic encryption setups, the system uses an isolated cryptographically secure pseudo-random number generator (CSPRNG) to generate unique, unrepeatable Initialization Vectors (IVs) and enforces rigorous PKCS7 padding boundaries.
+This repository contains a low-level network traffic analysis engine developed natively in Python without high-level library dependencies. Operating directly at the network interface layer, the architecture bypasses third-party driver dependencies to intercept raw inbound and outbound data streams. The system parses nested network headers using big-endian formatting to unpack Layer 3 IPv4 packets and track transport protocols (TCP/UDP/ICMP) in real time.
 
-Building this cryptographic pipeline provided practical mastery of high-entropy bit generation (`os.urandom`), data alignment algorithms, ciphertext transmission formatting via Base64 serialization, and the core implementation properties of the Confidentiality pillar within the CIA Triad.
+By utilizing native kernel input/output control configurations (`ioctl`), this script provides a cross-platform sniffing utility that runs smoothly across environments without requiring external packet capture drivers. Developing this project provided deep experience with binary data manipulation, network packet serialization, packet parsing, and cross-OS privilege handling.
 
 ---
 
 ## 🛠️ Core Features
-* **Hardened Symmetric Key Matrix**: Enforces authentic 256-bit key parameters, generating maximum security configurations using operating-system-level entropy structures.
-* **Cipher Block Chaining (CBC) Routing**: Prevents replay attacks, identical block patterns, and statistical frequency analysis by ensuring every plaintext block is mixed with the previous ciphertext block before transformation.
-* **Dynamic CSPRNG Initialization Vectors**: Automatically synthesizes a unique, random 16-byte IV for every separate encryption action, making it impossible to produce identical ciphertexts from identical inputs.
-* **PKCS7 Mathematical Padding**: Integrates standard padding layers to seamlessly structure arbitrary-length text inputs into clean 128-bit block increments, preventing text truncation or structural block crashes.
-* **Pre-Execution Key Validation**: Restricts input keys to exact 32-byte dimensions through program validations, ensuring the script fails safely rather than running under-strength configurations.
+* **Zero-Dependency Architecture**: Relies strictly on standard built-in libraries, removing third-party library dependency failures entirely.
+* **Native Promiscuous Mode Interception**: Uses native kernel controllers (`SIO_RCVALL`) to capture all network traffic reaching the local interface card.
+* **Low-Level Header Deserialization**: Employs structural byte arrays (`struct.unpack`) to break down complex network streams into clear parameters like routing addresses and TTL hops.
+* **Safe Error-Handling Architecture**: Validates system access levels before launching socket bindings, ensuring the software fails safely rather than crashing.
 
 ---
 
 ## 💻 Tech Stack & Dependencies
 * **Programming Language**: Python 3.x
-* **Primary Framework**: 
-  * `cryptography` - Specifically utilizing the PyCa (Python Cryptography Authority) `hazmat` primitives layer for robust, standard-aligned block configurations.
-* **Standard Library Dependencies**: `os`, `sys`, `base64`
+* **Core Modules Used (Standard Library)**:
+  * `socket` - For native raw network interface binding and low-level IP capture.
+  * `struct` - Unpacking structured data buffer sequences into distinct headers.
 
 ---
 
 ## 📋 Technical Implementation Matrix
 
-| Engine Infrastructure Module | Underlying Computational Logic | Cyber Security Application |
+| Architecture Module | Low-Level Internal Logic | Cybersecurity Application |
 | :--- | :--- | :--- |
-| **Entropy Generator Core** | Native Kernel CSPRNG Hooks (`os.urandom`) | High-Strength Non-Predictable Key Provisioning |
-| **Block Masking Controller**| Cipher Block Chaining (CBC) Pipelines | Pattern Masking & Replay Attack Defense |
-| **Data Boundary Padder** | PKCS7 Algorithmic Block Extension | Input Data Serialization Protection |
+| **Native Socket Hook** | Layer 3 Raw Ingestion Loops | Promiscuous Mode Traffic Monitoring |
+| **Binary Struct Unpacker**| Big-Endian Unpacking (`struct.unpack`) | Deep Packet Inspection (DPI) |
+| **I/O Control Interceptor**| Native OS `ioctl` Configuration | Cross-Platform Telemetry Extraction |
 
 ---
 
 ## 🚀 Deployment Instructions
 
 ### Prerequisites
-Before running the symmetric cipher engine, install the industry-standard cryptographic parsing library:
-```bash
-pip install cryptography
-```
+Interacting with physical network interfaces requires system-level administrative or root access.
 
 ### Installation & System Setup
-1. Clone this symmetric security repository onto your system:
+1. Clone this packet engineering repository onto your system:
    ```bash
    git clone https://github.com
    ```
 2. Navigate directly inside the active project directory:
    ```bash
-   cd Advanced-Cryptography-Tool-AES-256-Encryption
+   cd packet-sniffer
    ```
-3. Boot up the cryptographic sentinel engine:
-   ```bash
-   python3 crypto_tool.py
-   ```
-4. Enter any cleartext string when prompted to watch the engine pad, encrypt, translate to Base64, and dynamically decrypt the verification matrix in real time.
+3. Run the engine through an administrative command shell terminal:
+   * **On Linux / macOS:**
+     ```bash
+     sudo python3 sniffer.py
+     ```
+   * **On Windows:** Open an **Administrative Command Prompt** (Right-Click ➔ Run as Administrator) and run:
+     ```cmd
+     python sniffer.py
+     ```
 
 ---
 
 ## 💻 Source Code Preview
-*Below is the complete structural Python implementation of the AES-256 encryption pipeline for immediate academic evaluation:*
+*Below is the complete structural Python implementation of the native packet sniffing engine for immediate academic evaluation:*
 
 ```python
 import os
 import sys
-import base64
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.primitives import padding
-from cryptography.hazmat.backends import default_backend
+import socket
+import struct
 
-class AES256CipherEngine:
-    def __init__(self, key: bytes = None):
-        if key:
-            if len(key) != 32:
-                raise ValueError("[-] Critical Error: AES-256 requires a precise 32-byte key.")
-            self.key = key
-        else:
-            self.key = os.urandom(32)
+def parse_ipv4_header(raw_buffer):
+    ip_header = struct.unpack('!BBHHHBBH4s4s', raw_buffer[:20])
+    version_ihl = ip_header[0]
+    ihl = version_ihl & 0xF
+    ip_header_length = ihl * 4
+    ttl = ip_header[5]
+    protocol_type = ip_header[6]
+    src_ip = socket.inet_ntoa(ip_header[8])
+    dst_ip = socket.inet_ntoa(ip_header[9])
+    protocol_map = {1: "ICMP", 6: "TCP", 17: "UDP"}
+    protocol_name = protocol_map.get(protocol_type, f"PROTOCOL-{protocol_type}")
+    return protocol_name, src_ip, dst_ip, ttl, raw_buffer[ip_header_length:]
 
-    def encrypt_data(self, plaintext_message: str) -> bytes:
-        iv = os.urandom(16)
-        padder = padding.PKCS7(128).padder()
-        padded_data = padder.update(plaintext_message.encode('utf-8')) + padder.finalize()
-        
-        cipher = Cipher(algorithms.AES(self.key), modes.CBC(iv), backend=default_backend())
-        encryptor = cipher.encryptor()
-        ciphertext = encryptor.update(padded_data) + encryptor.finalize()
-        return iv + ciphertext
+def run_native_sniffer_loop():
+    host_os = sys.platform
+    if host_os == "win32":
+        hostname = socket.gethostname()
+        target_host_ip = socket.gethostbyname(hostname)
+        sniffer_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_IP)
+        sniffer_socket.bind((target_host_ip, 0))
+        sniffer_socket.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+        sniffer_socket.ioctl(socket.SIO_RCVALL, socket.RCVALL_ON)
+    else:
+        sniffer_socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
+        sniffer_socket.bind(("0.0.0.0", 0))
 
-    def decrypt_data(self, encrypted_buffer: bytes) -> str:
-        if len(encrypted_buffer) < 16:
-            raise ValueError("[-] Decryption Failure: Buffer too short to isolate IV.")
-            
-        iv = encrypted_buffer[:16]
-        ciphertext = encrypted_buffer[16:]
-        
-        cipher = Cipher(algorithms.AES(self.key), modes.CBC(iv), backend=default_backend())
-        decryptor = cipher.decryptor()
-        padded_plaintext = decryptor.update(ciphertext) + decryptor.finalize()
-        
-        unpadder = padding.PKCS7(128).unpadder()
-        plaintext_bytes = unpadder.update(padded_plaintext) + unpadder.finalize()
-        return plaintext_bytes.decode('utf-8')
-
-def main():
-    cipher_engine = AES256CipherEngine()
-    active_key_b64 = base64.b64encode(cipher_engine.key).decode('utf-8')
-    print(f"[*] Cryptographically Secure Key Generated (Base64):\n    {active_key_b64}\n")
-
-    secret_message = input("[?] Enter plaintext message to encrypt: ").strip()
-    if not secret_message:
-        secret_message = "Kyoto University International Admission Portfolio Token"
-
-    encrypted_payload = cipher_engine.encrypt_data(secret_message)
-    b64_ciphertext = base64.b64encode(encrypted_payload).decode('utf-8')
-    
-    print(f"\n -> Base64 Export Payload:\n    {b64_ciphertext}")
-    
-    decrypted_output = cipher_engine.decrypt_data(encrypted_payload)
-    print(f"\n -> Extracted Cleartext Payload:\n    {decrypted_output}\n")
+    print(f"[*] Native Sniffer Loop Active. Monitoring Intercepted IP Streams...\n")
+    try:
+        while True:
+            raw_packet_data, network_addr = sniffer_socket.recvfrom(65535)
+            proto, src, dst, ttl, payload = parse_ipv4_header(raw_packet_data)
+            print("-" * 65)
+            print(f" -> Protocol: {proto} | Routing Map: {src} ---> {dst} | TTL: {ttl}")
+    except KeyboardInterrupt:
+        print("\n[-] Sniffer Engine Terminated Safely.")
+        if host_os == "win32":
+            sniffer_socket.ioctl(socket.SIO_RCVALL, socket.RCVALL_OFF)
+        sys.exit(0)
 
 if __name__ == "__main__":
-    main()
+    is_admin = ctypes.windll.shell32.IsUserAnAdmin() != 0 if sys.platform == "win32" else os.getuid() == 0
+    if not is_admin:
+        sys.exit(1)
+    run_native_sniffer_loop()
 ```
 
 ---
 
 ## 🧠 Academic Statement & Intended Research Alignment
-This advanced cryptographic implementation was engineered to bypass weak, automated cryptographic shells and directly manipulate low-level cipher configurations. 
+This packet analyzer was engineered to master the core behaviors of network architecture models and inspect how data moves through physical interfaces. 
 
-I plan to expand this secure data architecture during my undergraduate engineering path to support advanced research tracks in **Homomorphic Encryption Pipelines, Secure Multiparty Computation Protocols, and Quantum-Resistant Cryptographic Hardening** within university research clusters.
+I plan to expand this native framework during my undergraduate engineering studies to support advanced research tracks in **Intrusion Detection Systems (IDS), Automated Network Threat Mitigation, and Low-Level Network Protocol Verification** within institutional laboratory environments.
 
 ---
-*Disclaimer: This data security script is an educational proof-of-concept built strictly for academic verification, standard algorithm mapping, and mathematical validation pipelines. Never implement non-vetted cryptographic wrappers inside high-stakes production infrastructures without specialized code reviews.*
+*Disclaimer: This sniffing utility is engineered strictly for authorized educational analysis, administrative data tracking, and academic network verification pipelines. Capturing data on unauthorized networks without explicit consent is illegal under global computer security frameworks.*
